@@ -1,0 +1,5 @@
+#python用
+/__pycache__
+/build
+/dist
+*.spec
