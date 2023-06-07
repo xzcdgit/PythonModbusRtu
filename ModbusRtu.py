@@ -8,7 +8,7 @@ import struct
 def crc16(veritydata):
     '''
     @function: crc校验码计算器
-    @param: veritydata 待计算数据
+    @param: veritydata(class bytes) 待计算数据
     @return: 将计算好的crc校验码返回
     '''
     if not veritydata:
@@ -20,8 +20,8 @@ def crc16(veritydata):
 def checkcrc(data):
     '''
     @function: 校验数据的crc校验码正确与否
-    @data: 待校验数据
-    @return: 返回校验结果 bool值
+    @param: data(class bytes) 待校验数据
+    @return: (class bool) 返回校验结果
     '''
     if not data:
         return False
@@ -68,8 +68,8 @@ def mmodbus(add, funcode, startregadd, regnum):
 def smodbus(recvdata, valueformat=0, intsigned=False):
     '''
     @function: 解析modbus-rtu返回数据的数值
-    @param: recvdata 待解析的数据
-    @param: valueformat 数据的转化类型(float 或者 int)
+    @param: recvdata(class bytes) 待解析的数据
+    @param: valueformat 数据的转化类型(float short 或者 int)
     @param: intsigned 数据为整型时是否有符号
     @return: 返回解析后的数值list
     '''
@@ -104,7 +104,7 @@ def smodbus(recvdata, valueformat=0, intsigned=False):
             [fvalue] = struct.unpack('f', bfloatdata)
             retdata.append(fvalue)
             print(f'Data{i+1}: {fvalue:.3f}')
-    elif valueformat in (1,"int"):
+    elif valueformat in (1,"short"):
         shortintnums = bytenums / 2
         print("short int nums: ", str(shortintnums))
         for i in range(int(shortintnums)):
@@ -112,31 +112,39 @@ def smodbus(recvdata, valueformat=0, intsigned=False):
             shortvalue = int.from_bytes(btemp, byteorder="big", signed=intsigned)
             retdata.append(shortvalue)
             print(f"Data{i+1}: {shortvalue}")
+    #双字数据
+    elif valueformat in (2,"int"):
+        intnums = bytenums / 4
+        print("int nums: ", str(intnums))
+        for i in range(int(intnums)):
+            btemp = recvdata[3+i*4:7+i*4]
+            intvalue = int.from_bytes(btemp, byteorder="big", signed=intsigned)
+            retdata.append(intvalue)
+            print(f"Data{i+1}: {intvalue}")
     return retdata
 
 if __name__ == '__main__':
-    port = "com3"
+    port = "com5"
     bps = 9600
     bytesize = 8
-    parity = 'N'
+    parity = 'E'
     stopbits = 1
     timeout = 0.5
     slaveadd = 1
     funcode = 3
-    startreg = 0
-    regnum = 8
+    startreg = 4096
+    regnum = 2
     send_data = mmodbus(slaveadd, funcode, startreg, regnum)
     print("send data: ",send_data.hex())
     com = serial.Serial(port, bps, bytesize, parity, stopbits, timeout)
     print("com is opened")
-    for i in range(25):
+    for i in range(1):
         com.write(send_data)
         recv_data = com.read(regnum*2+5)
         if len(recv_data) > 0:
             print("recv: ", recv_data.hex())
-            value = smodbus(recv_data)
+            value = smodbus(recv_data,"int")
             print("value: ", value)
-        time.sleep(0.2)
     com.close()
     print("com is closed")
 
