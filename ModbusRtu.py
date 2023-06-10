@@ -1,9 +1,12 @@
 import crcmod
 import serial
-import time
 import struct
 
 class ModbusRtu(object):
+    '''
+    modbus-rtu通信类
+    使用时需要先调用`connect()`打开串口，然后调用communicate或者read等进行串口通讯
+    '''
     def __init__(self) -> None:
         '''
         类实例变量初始化
